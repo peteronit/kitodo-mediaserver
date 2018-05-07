@@ -31,13 +31,28 @@ public class MetsModsFileProcessor implements ItemProcessor<WorkMetaInfo, WorkPo
         this.importerConfig = importerConfig;
     }
 
+    /**
+     *takes the information from the original workMetaInfo object
+     * and parses each read line line into its property lists
+     * the resulting WorkMetaInfo Object contains all properties parsed from the lines
+     * then this object is passed into WorkMetaInfoMapper constructor
+     * and the latter maps the information from property lists into its own named properties
+     * like getId() it also creates a true Work Pojo (including its Identifier Pojo Objects)
+     * form this mapped information and returns WorkPojoWithMetaInfo object containig the Pojo
+     * and some additional information(actually a file Path from where the file was read) needed
+     *when moving files later
+
+     * @param workMetaInfo
+     * @return
+     * @throws Exception
+     */
     @Override
     public WorkPojoWithMetaInfo process(WorkMetaInfo workMetaInfo) throws Exception {
 
         logger.info("Processor: parsing metsMods WorkDefinition file");
 
-        Stream<String> linesReturnedByXsl = processToGetResultAsLines(workMetaInfo);
 
+        Stream<String> linesReturnedByXsl = processToGetResultAsLines(workMetaInfo);
         //TODO: this is all to complicated: the whole
         //takes the information from the original workMetaInfo object
         //and parses each read line line into its property lists
@@ -65,7 +80,13 @@ public class MetsModsFileProcessor implements ItemProcessor<WorkMetaInfo, WorkPo
                 .forEach(param -> transformer.setParameter(param.getKey(), param.getValue()));
     }
 
-    /// made especially to be able to wo work on a single items basis outside of batch processing for the IMetsReader Interface
+    /**
+     * this function runs xslTransformation i
+     * @param work
+     * @return
+     * @throws TransformerException
+     */
+    ///
     public Stream<String> processToGetResultAsLines(WorkMetaInfo work) throws TransformerException {
         StringWriter writer = new StringWriter();
         transformer.transform(work.getWorkMetaInfoAsStreamSource(), new StreamResult(writer));

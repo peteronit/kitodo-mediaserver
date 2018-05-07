@@ -14,6 +14,17 @@ import org.springframework.context.annotation.Configuration;
 import javax.naming.ConfigurationException;
 import javax.xml.transform.Transformer;
 
+/**
+ * TODO: for now there is no straightforward way to use this implementation for  mediaserver-fileserver because it needs a different xmltransformer bean configuration
+ * this configuration provides
+ * 1) a IMetsReaderImpl bean that implements the IMetsImplInterface
+ * that can be used in the mediaserver-fileserver part (then another metsTransformer Bean is needed which is configured to
+ *  use a different .xsl file ) so for now there is no straightforward way to use this implementation for  mediaserver-fileserver
+ *
+ * 2) additionally it provides metsModsFileProcessor and metsModsReader Beans which are used in for the Batch Processing
+ * in the Importer component
+ *
+ */
 @Configuration
 @EnableConfigurationProperties({ImporterConfig.class, XmlTransformerConfig.class})
 public class MetsImporterBeansConfiguration {
@@ -32,6 +43,11 @@ public class MetsImporterBeansConfiguration {
     @Autowired
     private XmlTransformerConfig xmlTransformerConfig;
 
+    /**
+     * returns a class implementing the BatchProcessings Process() method. for more details see javadoc iside the MetsModsFileProcessor class
+     * @return the bean with the processor
+     * @throws ConfigurationException if there was a problem with the properties typically provided in the application.yml file
+     */
     @Bean
     public MetsModsFileProcessor metsModsFileProcessor() throws ConfigurationException {
         MetsModsFileProcessor p = new MetsModsFileProcessor(metsTransformer() , importerConfig);
