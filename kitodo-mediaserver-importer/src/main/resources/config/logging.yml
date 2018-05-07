@@ -1,0 +1,27 @@
+logging:
+  file: /home/peter/msrv/importer.log
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    #file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+  level:
+    ROOT: INFO  #WARN
+    batch: INFO
+    jdbc: INFO
+    org.kitodo.mediaserver.importer: INFO
+    org.hibernate: WARN #TRACE # WARN
+spring:
+  jpa:
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+#logging:
+ # level:
+  #  org:
+   #   hibernate:
+    #    type: trace
+
+    #the one below only needed to suppress warnings caused by known issues in spring batch itself
+    org.springframework.context.annotation.ConfigurationClassEnhancer: ERROR

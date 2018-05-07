@@ -1,0 +1,106 @@
+
+importer:
+
+  #you can run importer regularly using the cron schedule parameter
+  #(comment out the value of pause-between-runs-in-milliseconds property  below, when using it)
+  run-on-cron-schedule: #"0/40 * * * * ?"   #to disable comment out only the value itself, not the property
+
+  #alternatively you run importer iteratively with a break of N milliseconds
+  # (comment out the value of run-on-cron-schedule: property  above when using it)
+  pause-between-runs-in-milliseconds: 30000 #30000 #to disable comment out only the value itself, not the property
+
+  # recreate-batch-internal-tables-on-each-start is needed to be able to automatically create database tables
+  # needed by the Spring Batch itself internally
+  # the definition for the tables is in spring own
+  # classpath:org/springframework/batch/core/schema-mysql.sql
+  # and classpath:org/springframework/batch/core/schema-drop-mysql.sql
+  # by default the Batch database populator is turned on by the
+  # but it needs later be turned off by setting the this property
+  # this improves the startup time and allows spring batch to remember its state between program reruns
+  #
+  # essentially you could use this property to get rid of the old spring batch state
+  # after something got really wrong
+  # and you want to start over again. set the importer.recreate-batch-internal-tables-on-each-start: true
+  recreate-batch-internal-tables-on-each-start: false
+
+  #if dry-run is true the importer never really moves files it is only meant for debugging
+  #dry-run: true
+
+  #hotfolder to scan for incoming work
+  hot-folder-path: /home/peter/msrv/hotfolder/
+
+  #target for to move files into after they have been imported int o the DB
+  target-folder: /home/peter/msrv/hotfolder_out/
+
+  #after reading the Metsmods work definition Xml
+  #files of a particular work are first moved and gathered in a works subfolder under this folder
+  # this can not securely be done before, because there might be files in the main import folder
+  # and to find them we need the information from the metsmod.xml of the Work
+  # once the files are gathered (and only if)
+  # it deletes the pre-existing subfolder for the work in target folder
+  # and  moves the gathered folder to the target folder
+  # and then updates the db
+  # thus if there was a problem gathering files for the work or moving its files to target folder
+  # the works files end up in this folder
+  # sadly the same happens if the database update fails (but this is a chicken-and-egg-problem
+  # which is not easy(yes it is possible) to fully resolve without a transactional file system)
+  uncommitted-target-folder: /home/peter/msrv/unfinished_or_failed/
+
+  # the WorkMetaInfo (metainformation on work) will be read
+  # from an (MetsMods) xml file.
+  # below you can change the extension (several are possible) under which the importer will
+  # try to find the workMetaInfo file
+  # after reading this file will be moved to the target folder and be renamed
+  # into <workId>.<extension> like: work1245.xml (if not already named like this)
+  #
+  # the first entry in the list below will also be used as file name <extension> for this
+  # file in the target folder.
+  # (do not forget the "." like ".xml")
+  work-metafile-endings:
+  - .xml
+
+  # subfolders of the current Work(residing in the same folder as <WorkId>.xml)
+  # will be moved to target folder of the work if their names end with one of the following
+  move-subfolders-ending-with:
+  - _txt
+  - _tif
+
+  #once the information from the metsMods definition file is read and transformed by the xmltransformer
+  #it is represented ias a list of properties.
+  #all the properties starting with this following string are considered to be Identifiers for the current work
+  #like in thuis example:
+  #example:# main_label:Colloquia Lutheri conscripta a quibusdam et alia quaedam addita sunt. Thesaurus theologiae - Mscr.Dresd.A.180.d
+  #example:# identifier:http://digital.slub-dresden.de/id457052678
+  #example:# identifier.goobi:156804
+  #example:# identifier.swb-ppn:457052678
+  #example:# title:Colloquia Lutheri conscripta a quibusdam et alia quaedam addita sunt. Thesaurus theologiae - Mscr.Dresd.A.180.d
+  idetifier-properties-start-with: identifier
+
+  #the identifiers in the example above have different types like : identifier.goobi or  identifier.swb-ppn
+  #the below we set the identifier type used as a primary key wor Works (to address and distiguish them)
+  #set to: 'default' to make a property named just 'identifier' (without any type like '.kobv') the works key
+  #like kobv for identifier.kobv
+  main-identifier-type-to-become-works-key: kobv
+
+  #other properties returned from  xsl transformation fo the xml metsmods definintion are ignored
+  #this only property we actually use is the one containing the title for a work. it is set below:
+  main-title-for-work-from-property: main_label
+
+
+# settings for the xmltransformer bean which is used for XSL transformations on the metsmods files found
+# in the hotfolder
+xmltransformer:
+
+  #if file-path-is-absolute is true then xslt-file-path xxx/yyy.xsl is interpreted as classpath:xxx/yyy.xsl
+  #else if file-path-is-absolute is false then xslt-file-path is interpreted as an absolute path to the xslt file
+  #  i.e.  xslt-file-path /home/user/importer/metsmods.xsl
+  file-path-is-absolute: false
+  xslt-file-path: xslt/metsmods.xsl
+
+---
+#this property is needed to be set to false because the jobs are run using scheduling
+#if not the import job will run twice after starting the importer, but then will start running in the normal pace
+#given by the run-on-cron-schedule or the pause-between-runs-in-milliseconds properties
+#this could be set programmatically in the future to remove it from here, for now just leave it like that
+
+#spring.batch.job.enabled: false
